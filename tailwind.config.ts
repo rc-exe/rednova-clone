@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					hover: 'hsl(var(--primary-hover))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,6 +62,29 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				reddit: {
+					orange: 'hsl(var(--reddit-orange))',
+					blue: 'hsl(var(--reddit-blue))',
+					gray: 'hsl(var(--reddit-gray))',
+					'light-gray': 'hsl(var(--reddit-light-gray))',
+					border: 'hsl(var(--reddit-border))'
+				},
+				upvote: {
+					DEFAULT: 'hsl(var(--upvote))',
+					hover: 'hsl(var(--upvote-hover))'
+				},
+				downvote: {
+					DEFAULT: 'hsl(var(--downvote))',
+					hover: 'hsl(var(--downvote-hover))'
+				},
+				online: 'hsl(var(--online))',
+				gold: 'hsl(var(--gold))',
+				post: {
+					text: 'hsl(var(--post-text))',
+					link: 'hsl(var(--post-link))',
+					image: 'hsl(var(--post-image))',
+					video: 'hsl(var(--post-video))'
 				}
 			},
 			borderRadius: {
