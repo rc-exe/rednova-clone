@@ -10,6 +10,7 @@ import { PostDetailPage } from "./pages/PostDetailPage";
 import { SubredditPage } from "./pages/SubredditPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ExplorePage } from "./pages/ExplorePage";
+import { AuthPage } from "./pages/AuthPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/r/:subreddit" element={<SubredditPage />} />
           <Route path="/user/:username" element={<ProfilePage />} />
           <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/auth" element={<AuthPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
