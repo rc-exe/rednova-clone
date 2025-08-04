@@ -396,6 +396,10 @@ export type Database = {
         Args: { post_id: string }
         Returns: undefined
       }
+      increment_subreddit_members: {
+        Args: { subreddit_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
