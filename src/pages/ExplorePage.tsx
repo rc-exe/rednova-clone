@@ -4,26 +4,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SubredditCard } from "@/components/subreddit/SubredditCard";
-import { mockSubreddits } from "@/data/mockData";
+import { useSubreddits } from "@/hooks/useSubreddits";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const ExplorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("members");
+  
+  const { subreddits, loading } = useSubreddits();
 
-  const filteredSubreddits = mockSubreddits.filter(subreddit =>
+  const filteredSubreddits = subreddits.filter(subreddit =>
     subreddit.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    subreddit.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    subreddit.category.toLowerCase().includes(searchQuery.toLowerCase())
+    (subreddit.description || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (subreddit.category || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const sortedSubreddits = [...filteredSubreddits].sort((a, b) => {
     switch (sortBy) {
       case "members":
-        return b.members - a.members;
+        return (b.members || 0) - (a.members || 0);
       case "activity":
-        return b.activeMembers - a.activeMembers;
+        return (b.active_members || 0) - (a.active_members || 0);
       case "new":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case "name":
         return a.name.localeCompare(b.name);
       default:
@@ -94,11 +97,34 @@ export const ExplorePage = () => {
       </div>
 
       {/* Results */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sortedSubreddits.map((subreddit) => (
-          <SubredditCard key={subreddit.name} subreddit={subreddit} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedSubreddits.map((subreddit) => {
+            // Transform subreddit data to match SubredditCard interface
+            const transformedSubreddit = {
+              name: subreddit.name,
+              description: subreddit.description || "No description available",
+              members: subreddit.members || 0,
+              activeMembers: subreddit.active_members || 0,
+              createdAt: subreddit.created_at,
+              category: subreddit.category || "General",
+              isNSFW: subreddit.is_nsfw || false,
+              isJoined: false, // We'll add this functionality later
+              bannerUrl: subreddit.banner_url,
+              iconUrl: subreddit.icon_url || `https://api.dicebear.com/7.x/initials/svg?seed=${subreddit.name}`,
+            };
+            return (
+              <SubredditCard key={subreddit.id} subreddit={transformedSubreddit} />
+            );
+          })}
+        </div>
+      )}
 
       {/* No Results */}
       {filteredSubreddits.length === 0 && (

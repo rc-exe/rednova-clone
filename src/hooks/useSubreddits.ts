@@ -115,11 +115,10 @@ export const useSubreddits = () => {
 
       if (error) throw error;
 
-      // Update member count
-      const { error: updateError } = await supabase
-        .rpc('decrement_subreddit_members', { subreddit_id: subredditId });
-
-      if (updateError) throw updateError;
+      // TODO: Update member count when decrement function is available
+      // const { error: updateError } = await supabase
+      //   .rpc('decrement_subreddit_members', { subreddit_id: subredditId });
+      // if (updateError) throw updateError;
 
       toast({
         title: "Left subreddit successfully!",

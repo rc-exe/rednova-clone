@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Users, TrendingUp, Calendar, Settings, Bell, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,17 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/post/PostCard";
 import { CreatePost } from "@/components/post/CreatePost";
-import { mockPosts, mockSubreddits } from "@/data/mockData";
+import { useSubreddits } from "@/hooks/useSubreddits";
+import { usePosts } from "@/hooks/usePosts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const SubredditPage = () => {
-  const [isJoined, setIsJoined] = useState(true);
+  const { subreddit: subredditName } = useParams();
+  const [isJoined, setIsJoined] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   
-  // For demo purposes, using the first subreddit
-  const subreddit = mockSubreddits[0];
+  const { subreddits, loading: subredditsLoading } = useSubreddits();
+  const { posts, loading: postsLoading } = usePosts();
   
-  // Filter posts for this subreddit
-  const subredditPosts = mockPosts.filter(post => post.subreddit === subreddit.name);
+  const subreddit = subreddits.find(s => s.name === subredditName);
+  const subredditPosts = posts.filter(post => post.subreddits?.name === subredditName);
   
   const formatMemberCount = (count: number) => {
     if (count >= 1000000) {
@@ -28,6 +32,35 @@ export const SubredditPage = () => {
     return count.toString();
   };
 
+  if (subredditsLoading || postsLoading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <Skeleton className="h-48 w-full mb-6" />
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full" />
+            ))}
+          </div>
+          <div className="lg:w-80 space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!subreddit) {
+    return (
+      <div className="max-w-6xl mx-auto text-center py-12">
+        <h1 className="text-2xl font-bold mb-2">Subreddit not found</h1>
+        <p className="text-muted-foreground">The community you're looking for doesn't exist.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Subreddit Header */}
@@ -35,32 +68,32 @@ export const SubredditPage = () => {
         <div className="p-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-4 lg:space-y-0 lg:space-x-6">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={subreddit.iconUrl} />
-              <AvatarFallback className="text-2xl">{subreddit.name.slice(2, 4).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={subreddit.icon_url || `https://api.dicebear.com/7.x/initials/svg?seed=${subreddit.name}`} />
+              <AvatarFallback className="text-2xl">{subreddit.display_name.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             
             <div className="flex-1 space-y-2">
               <div className="flex items-center space-x-3">
-                <h1 className="text-3xl font-bold">{subreddit.name}</h1>
-                {subreddit.isNSFW && (
+                <h1 className="text-3xl font-bold">r/{subreddit.name}</h1>
+                {subreddit.is_nsfw && (
                   <Badge variant="destructive">NSFW</Badge>
                 )}
               </div>
               
-              <p className="text-muted-foreground text-lg">{subreddit.description}</p>
+              <p className="text-muted-foreground text-lg">{subreddit.description || "No description available"}</p>
               
               <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>{formatMemberCount(subreddit.members)} members</span>
+                  <span>{formatMemberCount(subreddit.members || 0)} members</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <TrendingUp className="h-4 w-4 text-online" />
-                  <span>{formatMemberCount(subreddit.activeMembers)} online</span>
+                  <span>{formatMemberCount(subreddit.active_members || 0)} online</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Created {new Date(subreddit.createdAt).getFullYear()}</span>
+                  <span>Created {new Date(subreddit.created_at).getFullYear()}</span>
                 </div>
               </div>
             </div>
@@ -118,29 +151,93 @@ export const SubredditPage = () => {
             
             <TabsContent value="hot" className="space-y-4 mt-6">
               {subredditPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={{
+                  id: post.id,
+                  title: post.title,
+                  content: post.content,
+                  author: post.profiles?.username || "Unknown",
+                  subreddit: `r/${post.subreddits?.name || "unknown"}`,
+                  createdAt: post.created_at,
+                  upvotes: post.upvotes || 0,
+                  downvotes: post.downvotes || 0,
+                  commentCount: post.comment_count || 0,
+                  type: post.type as "text" | "image" | "link" | "video",
+                  imageUrl: post.image_url || undefined,
+                  linkUrl: post.link_url || undefined,
+                  flair: post.flair || undefined,
+                  awards: post.awards || 0,
+                  isStickied: post.is_stickied || false,
+                }} />
               ))}
             </TabsContent>
             
             <TabsContent value="new" className="space-y-4 mt-6">
               {[...subredditPosts].sort((a, b) => 
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
               ).map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={{
+                  id: post.id,
+                  title: post.title,
+                  content: post.content,
+                  author: post.profiles?.username || "Unknown",
+                  subreddit: `r/${post.subreddits?.name || "unknown"}`,
+                  createdAt: post.created_at,
+                  upvotes: post.upvotes || 0,
+                  downvotes: post.downvotes || 0,
+                  commentCount: post.comment_count || 0,
+                  type: post.type as "text" | "image" | "link" | "video",
+                  imageUrl: post.image_url || undefined,
+                  linkUrl: post.link_url || undefined,
+                  flair: post.flair || undefined,
+                  awards: post.awards || 0,
+                  isStickied: post.is_stickied || false,
+                }} />
               ))}
             </TabsContent>
             
             <TabsContent value="top" className="space-y-4 mt-6">
               {[...subredditPosts].sort((a, b) => 
-                (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes)
+                ((b.upvotes || 0) - (b.downvotes || 0)) - ((a.upvotes || 0) - (a.downvotes || 0))
               ).map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={{
+                  id: post.id,
+                  title: post.title,
+                  content: post.content,
+                  author: post.profiles?.username || "Unknown",
+                  subreddit: `r/${post.subreddits?.name || "unknown"}`,
+                  createdAt: post.created_at,
+                  upvotes: post.upvotes || 0,
+                  downvotes: post.downvotes || 0,
+                  commentCount: post.comment_count || 0,
+                  type: post.type as "text" | "image" | "link" | "video",
+                  imageUrl: post.image_url || undefined,
+                  linkUrl: post.link_url || undefined,
+                  flair: post.flair || undefined,
+                  awards: post.awards || 0,
+                  isStickied: post.is_stickied || false,
+                }} />
               ))}
             </TabsContent>
             
             <TabsContent value="rising" className="space-y-4 mt-6">
               {subredditPosts.map((post) => (
-                <PostCard key={post.id} post={post} />
+                <PostCard key={post.id} post={{
+                  id: post.id,
+                  title: post.title,
+                  content: post.content,
+                  author: post.profiles?.username || "Unknown",
+                  subreddit: `r/${post.subreddits?.name || "unknown"}`,
+                  createdAt: post.created_at,
+                  upvotes: post.upvotes || 0,
+                  downvotes: post.downvotes || 0,
+                  commentCount: post.comment_count || 0,
+                  type: post.type as "text" | "image" | "link" | "video",
+                  imageUrl: post.image_url || undefined,
+                  linkUrl: post.link_url || undefined,
+                  flair: post.flair || undefined,
+                  awards: post.awards || 0,
+                  isStickied: post.is_stickied || false,
+                }} />
               ))}
             </TabsContent>
           </Tabs>
@@ -165,12 +262,12 @@ export const SubredditPage = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Online</span>
-                  <span className="text-sm font-medium">{formatMemberCount(subreddit.activeMembers)}</span>
+                  <span className="text-sm font-medium">{formatMemberCount(subreddit.active_members || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Created</span>
                   <span className="text-sm font-medium">
-                    {new Date(subreddit.createdAt).toLocaleDateString()}
+                    {new Date(subreddit.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
