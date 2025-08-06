@@ -23,9 +23,21 @@ export const CreatePost = () => {
     "r/webdesign"
   ];
 
-  const handleSubmit = () => {
-    console.log("Creating post:", { title, content, selectedCommunity, postType });
-    // Here you would handle the post creation
+  const handleSubmit = async () => {
+    if (!selectedCommunity || !title.trim()) return;
+
+    try {
+      // This would integrate with the posts creation in the future
+      console.log("Creating post:", { title, content, selectedCommunity, postType });
+      
+      // Reset form
+      setTitle("");
+      setContent("");
+      setSelectedCommunity("");
+      setPostType("text");
+    } catch (error) {
+      console.error("Error creating post:", error);
+    }
   };
 
   return (

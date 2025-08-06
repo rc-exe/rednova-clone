@@ -76,8 +76,10 @@ export const Header = () => {
                       <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span>Settings</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">
+                      <span>Settings</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut}>

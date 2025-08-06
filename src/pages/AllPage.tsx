@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { TrendingUp, Flame, Clock, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/post/PostCard";
-import { CreatePost } from "@/components/post/CreatePost";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { usePosts } from "@/hooks/usePosts";
 
-export const HomePage = () => {
+export const AllPage = () => {
   const [sortBy, setSortBy] = useState("hot");
-  const [showCreatePost, setShowCreatePost] = useState(false);
   const { posts, loading } = usePosts();
 
   const getSortIcon = (type: string) => {
@@ -39,7 +36,7 @@ export const HomePage = () => {
       default:
         // Hot algorithm: mix of votes and recency
         const aHot = (a.upvotes - a.downvotes + a.comment_count) / Math.pow(Date.now() - new Date(a.created_at).getTime(), 0.8);
-        const bHot = (b.upvotes - b.downvotes + b.comment_count) / Math.pow(Date.now() - new Date(a.created_at).getTime(), 0.8);
+        const bHot = (b.upvotes - b.downvotes + b.comment_count) / Math.pow(Date.now() - new Date(b.created_at).getTime(), 0.8);
         return bHot - aHot;
     }
   });
@@ -52,22 +49,12 @@ export const HomePage = () => {
         <main className="flex-1 ml-64">
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto space-y-6">
-              {/* Create Post Button - Mobile */}
-              <div className="md:hidden">
-                <Button 
-                  onClick={() => setShowCreatePost(!showCreatePost)}
-                  className="w-full bg-reddit-orange hover:bg-reddit-orange/90"
-                >
-                  Create Post
-                </Button>
-              </div>
-
-              {/* Create Post Form */}
-              {showCreatePost && <CreatePost />}
-
-              {/* Sort Options */}
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Home Feed</h1>
+                <div>
+                  <h1 className="text-2xl font-bold">All Posts</h1>
+                  <p className="text-muted-foreground">Browse posts from all communities</p>
+                </div>
                 
                 <Tabs value={sortBy} onValueChange={setSortBy}>
                   <TabsList className="grid w-full grid-cols-4 lg:w-auto">

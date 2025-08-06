@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 
 export const Sidebar = () => {
   const popularSubreddits = [
@@ -33,18 +34,22 @@ export const Sidebar = () => {
               <TrendingUp className="mr-2 h-4 w-4" />
               Popular
             </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <Users className="mr-2 h-4 w-4" />
-              All
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/all">
+                <Users className="mr-2 h-4 w-4" />
+                All
+              </Link>
             </Button>
           </div>
 
           <Separator />
 
           {/* Create Community */}
-          <Button className="w-full" size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Community
+          <Button className="w-full" size="sm" asChild>
+            <Link to="/create-community">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Community
+            </Link>
           </Button>
 
           <Separator />
@@ -111,9 +116,11 @@ export const Sidebar = () => {
 
           {/* Footer Links */}
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
             </Button>
           </div>
         </div>

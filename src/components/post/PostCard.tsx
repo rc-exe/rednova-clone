@@ -9,19 +9,19 @@ interface PostCardProps {
   post: {
     id: string;
     title: string;
-    content?: string;
-    author: string;
-    subreddit: string;
-    createdAt: string;
+    content?: string | null;
+    author_id: string;
+    subreddit_id: string;
+    created_at: string;
     upvotes: number;
     downvotes: number;
-    commentCount: number;
+    comment_count: number;
     type: "text" | "link" | "image" | "video";
-    imageUrl?: string;
-    linkUrl?: string;
-    flair?: string;
+    image_url?: string | null;
+    link_url?: string | null;
+    flair?: string | null;
     awards: number;
-    isStickied?: boolean;
+    is_stickied?: boolean | null;
   };
 }
 
@@ -47,22 +47,14 @@ export const PostCard = ({ post }: PostCardProps) => {
     }
   };
 
-  const timeAgo = new Date(post.createdAt).toLocaleTimeString();
+  const timeAgo = new Date(post.created_at).toLocaleTimeString();
 
   return (
-    <Card className={`mb-4 ${post.isStickied ? "border-reddit-orange" : ""}`}>
+    <Card className={`mb-4 ${post.is_stickied ? "border-reddit-orange" : ""}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <Avatar className="w-6 h-6">
-            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.subreddit}`} />
-            <AvatarFallback>{post.subreddit[2]?.toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="font-semibold text-foreground">{post.subreddit}</span>
-          <span>•</span>
-          <span>Posted by u/{post.author}</span>
-          <span>•</span>
-          <span>{timeAgo}</span>
-          {post.isStickied && (
+          <span>Posted {timeAgo}</span>
+          {post.is_stickied && (
             <Badge variant="outline" className="border-reddit-orange text-reddit-orange">
               Pinned
             </Badge>
@@ -115,25 +107,25 @@ export const PostCard = ({ post }: PostCardProps) => {
               </p>
             )}
 
-            {post.imageUrl && (
+            {post.image_url && (
               <div className="mb-3">
                 <img 
-                  src={post.imageUrl} 
+                  src={post.image_url} 
                   alt="Post content" 
                   className="rounded-md max-w-full h-auto"
                 />
               </div>
             )}
 
-            {post.linkUrl && (
+            {post.link_url && (
               <div className="mb-3 p-3 border rounded-md bg-muted/50">
                 <a 
-                  href={post.linkUrl} 
+                  href={post.link_url} 
                   className="text-post-link hover:underline text-sm"
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  {post.linkUrl}
+                  {post.link_url}
                 </a>
               </div>
             )}
@@ -142,7 +134,7 @@ export const PostCard = ({ post }: PostCardProps) => {
             <div className="flex items-center space-x-4 text-muted-foreground">
               <Button variant="ghost" size="sm" className="h-auto p-1">
                 <MessageCircle className="h-4 w-4 mr-1" />
-                <span className="text-sm">{post.commentCount} Comments</span>
+                <span className="text-sm">{post.comment_count} Comments</span>
               </Button>
               
               <Button variant="ghost" size="sm" className="h-auto p-1">
