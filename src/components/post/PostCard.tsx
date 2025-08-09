@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useVotes } from "@/hooks/useVotes";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
   post: {
@@ -26,15 +29,23 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ post }: PostCardProps) => {
-  const [voteState, setVoteState] = useState<"up" | "down" | null>(null);
+  const [voteState, setVoteState] = useState<1 | -1 | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const { voteOnPost, getUserVote } = useVotes();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleVote = (type: "up" | "down") => {
-    if (voteState === type) {
-      setVoteState(null);
-    } else {
-      setVoteState(type);
+  useEffect(() => {
+    if (user) {
+      getUserVote(post.id).then((vote) => {
+        setVoteState(vote as 1 | -1 | null);
+      });
     }
+  }, [user, post.id, getUserVote]);
+
+  const handleVote = async (type: 1 | -1) => {
+    await voteOnPost(post.id, type);
+    setVoteState(voteState === type ? null : type);
   };
 
   const getPostTypeColor = () => {
@@ -74,22 +85,22 @@ export const PostCard = ({ post }: PostCardProps) => {
             <Button
               variant="ghost"
               size="sm"
-              className={`p-1 h-auto ${voteState === "up" ? "text-upvote hover:text-upvote-hover" : "text-muted-foreground"}`}
-              onClick={() => handleVote("up")}
+              className={`p-1 h-auto ${voteState === 1 ? "text-reddit-orange hover:text-reddit-orange" : "text-muted-foreground"}`}
+              onClick={() => handleVote(1)}
             >
               <ArrowUp className="h-5 w-5" />
             </Button>
             <span className={`text-sm font-medium ${
-              voteState === "up" ? "text-upvote" : 
-              voteState === "down" ? "text-downvote" : "text-foreground"
+              voteState === 1 ? "text-reddit-orange" : 
+              voteState === -1 ? "text-blue-500" : "text-foreground"
             }`}>
-              {post.upvotes - post.downvotes + (voteState === "up" ? 1 : voteState === "down" ? -1 : 0)}
+              {(post.upvotes || 0) - (post.downvotes || 0)}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              className={`p-1 h-auto ${voteState === "down" ? "text-downvote hover:text-downvote-hover" : "text-muted-foreground"}`}
-              onClick={() => handleVote("down")}
+              className={`p-1 h-auto ${voteState === -1 ? "text-blue-500 hover:text-blue-600" : "text-muted-foreground"}`}
+              onClick={() => handleVote(-1)}
             >
               <ArrowDown className="h-5 w-5" />
             </Button>
@@ -97,7 +108,10 @@ export const PostCard = ({ post }: PostCardProps) => {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h2 className={`text-lg font-semibold mb-2 ${getPostTypeColor()}`}>
+            <h2 
+              className={`text-lg font-semibold mb-2 cursor-pointer hover:text-reddit-orange ${getPostTypeColor()}`}
+              onClick={() => navigate(`/post/${post.id}`)}
+            >
               {post.title}
             </h2>
             
@@ -132,7 +146,12 @@ export const PostCard = ({ post }: PostCardProps) => {
 
             {/* Actions */}
             <div className="flex items-center space-x-4 text-muted-foreground">
-              <Button variant="ghost" size="sm" className="h-auto p-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-auto p-1"
+                onClick={() => navigate(`/post/${post.id}`)}
+              >
                 <MessageCircle className="h-4 w-4 mr-1" />
                 <span className="text-sm">{post.comment_count} Comments</span>
               </Button>
@@ -154,7 +173,7 @@ export const PostCard = ({ post }: PostCardProps) => {
 
               {post.awards > 0 && (
                 <div className="flex items-center">
-                  <Award className="h-4 w-4 mr-1 text-gold" />
+                  <Award className="h-4 w-4 mr-1 text-yellow-500" />
                   <span className="text-sm">{post.awards}</span>
                 </div>
               )}

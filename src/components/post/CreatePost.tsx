@@ -7,36 +7,73 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useSubreddits } from "@/hooks/useSubreddits";
 
 export const CreatePost = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [selectedCommunity, setSelectedCommunity] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [selectedSubreddit, setSelectedSubreddit] = useState("");
+  const [flair, setFlair] = useState("");
   const [postType, setPostType] = useState("text");
-
-  const communities = [
-    "r/reactjs",
-    "r/webdev", 
-    "r/programming",
-    "r/javascript",
-    "r/Frontend",
-    "r/webdesign"
-  ];
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { subreddits } = useSubreddits();
 
   const handleSubmit = async () => {
-    if (!selectedCommunity || !title.trim()) return;
+    if (!user || !title.trim() || !selectedSubreddit) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields and select a community",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    setLoading(true);
     try {
-      // This would integrate with the posts creation in the future
-      console.log("Creating post:", { title, content, selectedCommunity, postType });
-      
+      const postData = {
+        title: title.trim(),
+        content: postType === "text" ? content : null,
+        link_url: postType === "link" ? linkUrl : null,
+        type: postType as "text" | "link" | "image" | "video",
+        author_id: user.id,
+        subreddit_id: selectedSubreddit,
+        flair: flair || null,
+      };
+
+      const { error } = await supabase
+        .from("posts")
+        .insert(postData);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post created!",
+        description: "Your post has been published successfully.",
+      });
+
       // Reset form
       setTitle("");
       setContent("");
-      setSelectedCommunity("");
+      setLinkUrl("");
+      setSelectedSubreddit("");
+      setFlair("");
       setPostType("text");
     } catch (error) {
       console.error("Error creating post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,25 +88,36 @@ export const CreatePost = () => {
       <CardContent className="space-y-4">
         {/* Community Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Choose a community</label>
-          <Select value={selectedCommunity} onValueChange={setSelectedCommunity}>
+          <Label htmlFor="community">Choose a community</Label>
+          <Select value={selectedSubreddit} onValueChange={setSelectedSubreddit}>
             <SelectTrigger>
               <SelectValue placeholder="Select a community" />
             </SelectTrigger>
             <SelectContent>
-              {communities.map((community) => (
-                <SelectItem key={community} value={community}>
+              {subreddits.map((subreddit) => (
+                <SelectItem key={subreddit.id} value={subreddit.id}>
                   <div className="flex items-center space-x-2">
                     <Avatar className="w-6 h-6">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${community}`} />
-                      <AvatarFallback>{community[2]?.toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={subreddit.icon_url || `https://api.dicebear.com/7.x/initials/svg?seed=${subreddit.name}`} />
+                      <AvatarFallback>{subreddit.name[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span>{community}</span>
+                    <span>r/{subreddit.name}</span>
                   </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Flair (optional) */}
+        <div className="space-y-2">
+          <Label htmlFor="flair">Flair (optional)</Label>
+          <Input
+            id="flair"
+            placeholder="Add a flair to your post"
+            value={flair}
+            onChange={(e) => setFlair(e.target.value)}
+          />
         </div>
 
         {/* Post Type Tabs */}
@@ -95,19 +143,22 @@ export const CreatePost = () => {
 
           {/* Title Input */}
           <div className="space-y-2 mt-4">
-            <label className="text-sm font-medium">Title</label>
+            <Label htmlFor="title">Title *</Label>
             <Input
+              id="title"
               placeholder="An interesting title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="text-lg"
+              required
             />
           </div>
 
           <TabsContent value="text" className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Text (optional)</label>
+              <Label htmlFor="content">Text (optional)</Label>
               <Textarea
+                id="content"
                 placeholder="What are your thoughts?"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -118,36 +169,36 @@ export const CreatePost = () => {
 
           <TabsContent value="image" className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Upload Image</label>
+              <Label>Upload Image</Label>
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <Image className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Drag and drop images or click to browse</p>
-                <Button variant="outline" className="mt-2">
-                  Choose File
-                </Button>
+                <p className="text-muted-foreground">Image upload coming soon!</p>
+                <p className="text-sm text-muted-foreground">For now, use link posts to share images</p>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="link" className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">URL</label>
+              <Label htmlFor="link">URL *</Label>
               <Input
+                id="link"
                 placeholder="https://example.com"
                 type="url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                required={postType === "link"}
               />
             </div>
           </TabsContent>
 
           <TabsContent value="video" className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Upload Video</label>
+              <Label>Upload Video</Label>
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
                 <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground">Drag and drop videos or click to browse</p>
-                <Button variant="outline" className="mt-2">
-                  Choose File
-                </Button>
+                <p className="text-muted-foreground">Video upload coming soon!</p>
+                <p className="text-sm text-muted-foreground">For now, use link posts to share videos</p>
               </div>
             </div>
           </TabsContent>
@@ -155,9 +206,15 @@ export const CreatePost = () => {
 
         {/* Submit Button */}
         <div className="flex justify-end space-x-2">
-          <Button variant="outline">Save Draft</Button>
-          <Button onClick={handleSubmit} disabled={!title || !selectedCommunity}>
-            Post
+          <Button variant="outline" disabled={loading}>
+            Save Draft
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={!title || !selectedSubreddit || loading || (postType === "link" && !linkUrl)}
+            className="bg-reddit-orange hover:bg-reddit-orange/90"
+          >
+            {loading ? "Posting..." : "Post"}
           </Button>
         </div>
       </CardContent>
