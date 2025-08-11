@@ -165,27 +165,33 @@ export const PostDetailPage = () => {
           </div>
         ) : comments.length > 0 ? (
           comments.map((comment) => (
-            <CommentCard key={comment.id} comment={{
-              id: comment.id,
-              author: comment.profiles?.username || "Unknown",
-              content: comment.content,
-              createdAt: comment.created_at,
-              upvotes: comment.upvotes || 0,
-              downvotes: comment.downvotes || 0,
-              awards: comment.awards || 0,
-              depth: comment.depth || 0,
-              replies: (comment.replies || []).map((reply: any) => ({
-                id: reply.id,
-                author: reply.profiles?.username || "Unknown",
-                content: reply.content,
-                createdAt: reply.created_at,
-                upvotes: reply.upvotes || 0,
-                downvotes: reply.downvotes || 0,
-                awards: reply.awards || 0,
-                depth: reply.depth || 0,
-                replies: [],
-              })),
-            }} />
+            <CommentCard 
+              key={comment.id} 
+              comment={{
+                id: comment.id,
+                author: comment.profiles?.username || "Unknown",
+                content: comment.content,
+                createdAt: comment.created_at,
+                upvotes: comment.upvotes || 0,
+                downvotes: comment.downvotes || 0,
+                awards: comment.awards || 0,
+                depth: comment.depth || 0,
+                replies: (comment.replies || []).map((reply: any) => ({
+                  id: reply.id,
+                  author: reply.profiles?.username || "Unknown",
+                  content: reply.content,
+                  createdAt: reply.created_at,
+                  upvotes: reply.upvotes || 0,
+                  downvotes: reply.downvotes || 0,
+                  awards: reply.awards || 0,
+                  depth: reply.depth || 0,
+                  replies: [],
+                })),
+              }}
+              onReply={async (content: string, parentId: string) => {
+                await createComment(content, parentId);
+              }}
+            />
           ))
         ) : (
           <div className="text-center py-8 text-muted-foreground">

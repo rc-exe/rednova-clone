@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowUp, ArrowDown, MessageCircle, Award, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useVotes } from "@/hooks/useVotes";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CommentData {
   id: string;
@@ -25,30 +27,56 @@ interface CommentData {
 interface CommentCardProps {
   comment: CommentData;
   maxDepth?: number;
+  onReply?: (content: string, parentId: string) => Promise<void>;
 }
 
-export const CommentCard = ({ comment, maxDepth = 5 }: CommentCardProps) => {
-  const [voteState, setVoteState] = useState<"up" | "down" | null>(null);
+export const CommentCard = ({ comment, maxDepth = 5, onReply }: CommentCardProps) => {
+  const [userVote, setUserVote] = useState<1 | -1 | null>(null);
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { voteOnComment, getUserVote } = useVotes();
+  const { user } = useAuth();
 
-  const handleVote = (type: "up" | "down") => {
-    if (voteState === type) {
-      setVoteState(null);
-    } else {
-      setVoteState(type);
+  useEffect(() => {
+    if (user) {
+      getUserVote(undefined, comment.id).then(setUserVote);
+    }
+  }, [user, comment.id, getUserVote]);
+
+  const handleVote = async (voteType: 1 | -1) => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const newVoteType = userVote === voteType ? null : voteType;
+      await voteOnComment(comment.id, newVoteType === null ? 0 : newVoteType);
+      setUserVote(newVoteType);
+    } catch (error) {
+      console.error("Error voting on comment:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleReply = () => {
-    console.log("Replying:", replyText);
-    setReplyText("");
-    setIsReplying(false);
+  const handleReply = async () => {
+    if (!onReply || !replyText.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      await onReply(replyText, comment.id);
+      setReplyText("");
+      setIsReplying(false);
+    } catch (error) {
+      console.error("Error replying to comment:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const score = comment.upvotes - comment.downvotes + 
-    (voteState === "up" ? 1 : voteState === "down" ? -1 : 0);
+  const score = comment.upvotes - comment.downvotes;
 
   const timeAgo = new Date(comment.createdAt).toLocaleTimeString();
 
@@ -98,37 +126,42 @@ export const CommentCard = ({ comment, maxDepth = 5 }: CommentCardProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-auto p-1 ${voteState === "up" ? "text-upvote" : ""}`}
-                    onClick={() => handleVote("up")}
+                    className={`h-auto p-1 ${userVote === 1 ? "text-upvote" : ""}`}
+                    onClick={() => handleVote(1)}
+                    disabled={isLoading || !user}
                   >
                     <ArrowUp className="h-3 w-3" />
                   </Button>
                   <span className={`text-xs font-medium ${
-                    voteState === "up" ? "text-upvote" : 
-                    voteState === "down" ? "text-downvote" : ""
+                    userVote === 1 ? "text-upvote" : 
+                    userVote === -1 ? "text-downvote" : ""
                   }`}>
                     {score}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-auto p-1 ${voteState === "down" ? "text-downvote" : ""}`}
-                    onClick={() => handleVote("down")}
+                    className={`h-auto p-1 ${userVote === -1 ? "text-downvote" : ""}`}
+                    onClick={() => handleVote(-1)}
+                    disabled={isLoading || !user}
                   >
                     <ArrowDown className="h-3 w-3" />
                   </Button>
                 </div>
 
                 {/* Reply */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-1 text-xs"
-                  onClick={() => setIsReplying(!isReplying)}
-                >
-                  <MessageCircle className="h-3 w-3 mr-1" />
-                  Reply
-                </Button>
+                {user && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-1 text-xs"
+                    onClick={() => setIsReplying(!isReplying)}
+                    disabled={isLoading}
+                  >
+                    <MessageCircle className="h-3 w-3 mr-1" />
+                    Reply
+                  </Button>
+                )}
 
                 {/* More options */}
                 <DropdownMenu>
@@ -156,8 +189,12 @@ export const CommentCard = ({ comment, maxDepth = 5 }: CommentCardProps) => {
                     className="text-sm"
                   />
                   <div className="flex space-x-2">
-                    <Button size="sm" onClick={handleReply} disabled={!replyText.trim()}>
-                      Reply
+                    <Button 
+                      size="sm" 
+                      onClick={handleReply} 
+                      disabled={!replyText.trim() || isLoading}
+                    >
+                      {isLoading ? "Posting..." : "Reply"}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setIsReplying(false)}>
                       Cancel
@@ -174,6 +211,7 @@ export const CommentCard = ({ comment, maxDepth = 5 }: CommentCardProps) => {
                       key={reply.id}
                       comment={reply}
                       maxDepth={maxDepth}
+                      onReply={onReply}
                     />
                   ))}
                 </div>

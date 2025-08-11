@@ -77,7 +77,7 @@ export const useVotes = () => {
     }
   };
 
-  const voteOnComment = async (commentId: string, voteType: 1 | -1) => {
+  const voteOnComment = async (commentId: string, voteType: 1 | -1 | 0) => {
     if (!user) {
       toast({
         title: "Authentication required",
@@ -97,8 +97,8 @@ export const useVotes = () => {
         .single();
 
       if (existingVote) {
-        if (existingVote.vote_type === voteType) {
-          // Remove vote if clicking same vote
+        if (voteType === 0) {
+          // Remove vote
           await supabase
             .from("votes")
             .delete()
@@ -112,7 +112,7 @@ export const useVotes = () => {
             .eq("user_id", user.id)
             .eq("comment_id", commentId);
         }
-      } else {
+      } else if (voteType !== 0) {
         // Create new vote
         await supabase
           .from("votes")
