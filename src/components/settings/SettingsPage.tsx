@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Bell, Shield, Palette, Globe, Database } from "lucide-react";
+import { User, Bell, Shield, Palette, Globe, Database, Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,87 +10,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
+
+import { useNotifications } from "@/hooks/useNotifications";
+import { useToast } from "@/hooks/use-toast";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { MessageCenter } from "@/components/messages/MessageCenter";
 
 export const SettingsPage = () => {
   const { user } = useAuth();
+  const { profile, updateProfile, loading: profileLoading } = useProfile();
+  
+  const { notifications, createNotification } = useNotifications();
+  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({
-    username: "",
-    display_name: "",
-    bio: "",
-    website: "",
-    location: ""
-  });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
+  
   const [preferences, setPreferences] = useState({
     email_notifications: true,
     push_notifications: true,
     comment_notifications: true,
     mention_notifications: true,
-    theme: "system",
     language: "en",
     nsfw_content: false,
     autoplay_media: true,
     show_online_status: true
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchPreferences();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        setProfile(data);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  };
-
-  const fetchPreferences = async () => {
-    // For now, just use the default preferences since user_preferences table
-    // would need to be properly configured in the database
-    console.log('Using default preferences');
-  };
-
   const handleProfileSave = async () => {
-    if (!user) return;
+    if (!profile) return;
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          user_id: user.id,
-          ...profile
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully."
-      });
+      await updateProfile(profile);
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update profile.",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
@@ -101,8 +57,9 @@ export const SettingsPage = () => {
 
     setLoading(true);
     try {
-      // For now, just show success since user_preferences table
-      // would need to be properly configured in the database
+      // Store preferences in localStorage for now
+      localStorage.setItem('user-preferences', JSON.stringify(preferences));
+      
       toast({
         title: "Preferences updated",
         description: "Your preferences have been updated successfully."
@@ -119,12 +76,68 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleTestNotification = async () => {
+    await createNotification({
+      type: "system",
+      title: "Test Notification",
+      message: "This is a test notification to demo the notification system!",
+      read: false,
+    });
+    
+    toast({
+      title: "Test notification sent!",
+      description: "Check your notifications to see it."
+    });
+  };
+
+  // Load preferences from localStorage
+  useEffect(() => {
+    const savedPreferences = localStorage.getItem('user-preferences');
+    if (savedPreferences) {
+      setPreferences(JSON.parse(savedPreferences));
+    }
+  }, []);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
-      </div>
+    <>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowNotifications(true)}
+              className="relative"
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              Notifications
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                  {notifications.filter(n => !n.read).length}
+                </span>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={() => setShowMessages(true)}
+            >
+              <User className="h-4 w-4 mr-2" />
+              Messages
+            </Button>
+            
+            <Button
+              variant="outline"
+              onClick={handleTestNotification}
+            >
+              Test Notification
+            </Button>
+          </div>
+        </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
@@ -143,61 +156,70 @@ export const SettingsPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
-                    value={profile.username}
-                    onChange={(e) => setProfile(prev => ({ ...prev, username: e.target.value }))}
-                    placeholder="Your username"
-                  />
+              {profileLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Loading profile...</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    value={profile.display_name}
-                    onChange={(e) => setProfile(prev => ({ ...prev, display_name: e.target.value }))}
-                    placeholder="Your display name"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Tell us about yourself"
-                  rows={3}
-                />
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={profile?.username || ""}
+                        onChange={(e) => updateProfile({ username: e.target.value })}
+                        placeholder="Your username"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="displayName">Display Name</Label>
+                      <Input
+                        id="displayName"
+                        value={profile?.display_name || ""}
+                        onChange={(e) => updateProfile({ display_name: e.target.value })}
+                        placeholder="Your display name"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={profile?.bio || ""}
+                      onChange={(e) => updateProfile({ bio: e.target.value })}
+                      placeholder="Tell us about yourself"
+                      rows={3}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    value={profile.website}
-                    onChange={(e) => setProfile(prev => ({ ...prev, website: e.target.value }))}
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    value={profile.location}
-                    onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
-                    placeholder="Your location"
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={profile?.website || ""}
+                        onChange={(e) => updateProfile({ website: e.target.value })}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={profile?.location || ""}
+                        onChange={(e) => updateProfile({ location: e.target.value })}
+                        placeholder="Your location"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
-              <Button onClick={handleProfileSave} disabled={loading}>
+              <Button onClick={handleProfileSave} disabled={loading || profileLoading}>
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
             </CardContent>
@@ -343,23 +365,37 @@ export const SettingsPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <Label>Theme</Label>
-                <Select
-                  value={preferences.theme}
-                  onValueChange={(value) => 
-                    setPreferences(prev => ({ ...prev, theme: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={theme === "light" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("light")}
+                    className="flex items-center space-x-2"
+                  >
+                    <Sun className="h-4 w-4" />
+                    <span>Light</span>
+                  </Button>
+                  <Button
+                    variant={theme === "dark" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("dark")}
+                    className="flex items-center space-x-2"
+                  >
+                    <Moon className="h-4 w-4" />
+                    <span>Dark</span>
+                  </Button>
+                  <Button
+                    variant={theme === "system" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTheme("system")}
+                    className="flex items-center space-x-2"
+                  >
+                    <Monitor className="h-4 w-4" />
+                    <span>System</span>
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -406,6 +442,17 @@ export const SettingsPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+
+      <NotificationCenter 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
+      
+      <MessageCenter 
+        isOpen={showMessages} 
+        onClose={() => setShowMessages(false)} 
+      />
+    </>
   );
 };
