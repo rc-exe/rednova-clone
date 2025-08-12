@@ -18,7 +18,7 @@ export const NotificationCenter = ({ isOpen, onClose }: NotificationCenterProps)
   const [selectedTab, setSelectedTab] = useState<"all" | "unread">("all");
 
   const filteredNotifications = selectedTab === "unread" 
-    ? notifications.filter(n => !n.read)
+    ? notifications.filter(n => !n.is_read)
     : notifications;
 
   const getNotificationIcon = (type: string) => {
@@ -110,7 +110,7 @@ export const NotificationCenter = ({ isOpen, onClose }: NotificationCenterProps)
                   <div
                     key={notification.id}
                     className={`p-3 rounded-lg border ${
-                      notification.read ? "bg-muted/30" : "bg-primary/5 border-primary/20"
+                      notification.is_read ? "bg-muted/30" : "bg-primary/5 border-primary/20"
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -120,7 +120,7 @@ export const NotificationCenter = ({ isOpen, onClose }: NotificationCenterProps)
                           <p className="text-sm font-medium truncate">
                             {notification.title}
                           </p>
-                          {!notification.read && (
+                          {!notification.is_read && (
                             <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                           )}
                         </div>
@@ -133,7 +133,7 @@ export const NotificationCenter = ({ isOpen, onClose }: NotificationCenterProps)
                       </div>
                       
                       <div className="flex space-x-1 ml-2">
-                        {!notification.read && (
+                        {!notification.is_read && (
                           <Button
                             variant="ghost"
                             size="sm"

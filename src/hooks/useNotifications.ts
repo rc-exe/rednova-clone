@@ -9,9 +9,10 @@ export interface Notification {
   type: "comment_reply" | "mention" | "post_reply" | "system";
   title: string;
   message: string;
-  read: boolean;
+  is_read: boolean;
   created_at: string;
   data?: any;
+  related_post_id?: string;
 }
 
 export const useNotifications = () => {
@@ -29,7 +30,7 @@ export const useNotifications = () => {
       type: "comment_reply",
       title: "New reply to your comment",
       message: "Someone replied to your comment in 'What's your favorite programming language?'",
-      read: false,
+      is_read: false,
       created_at: new Date(Date.now() - 3600000).toISOString(),
       data: { post_id: "123", comment_id: "456" }
     },
@@ -39,7 +40,7 @@ export const useNotifications = () => {
       type: "mention",
       title: "You were mentioned",
       message: "u/developer123 mentioned you in a post about React best practices",
-      read: false,
+      is_read: false,
       created_at: new Date(Date.now() - 7200000).toISOString(),
       data: { post_id: "789" }
     },
@@ -49,7 +50,7 @@ export const useNotifications = () => {
       type: "system",
       title: "Welcome to Reddit Clone!",
       message: "Thanks for joining our community. Start by exploring some communities!",
-      read: true,
+      is_read: true,
       created_at: new Date(Date.now() - 86400000).toISOString(),
     }
   ];
@@ -58,7 +59,7 @@ export const useNotifications = () => {
     if (user) {
       // For now, use mock data
       setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.read).length);
+      setUnreadCount(mockNotifications.filter(n => !n.is_read).length);
       setLoading(false);
     }
   }, [user]);
@@ -67,7 +68,7 @@ export const useNotifications = () => {
     try {
       setNotifications(prev => 
         prev.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
+          n.id === notificationId ? { ...n, is_read: true } : n
         )
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -84,7 +85,7 @@ export const useNotifications = () => {
   const markAllAsRead = async () => {
     try {
       setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
+        prev.map(n => ({ ...n, is_read: true }))
       );
       setUnreadCount(0);
       
@@ -100,7 +101,7 @@ export const useNotifications = () => {
     try {
       const notification = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      if (notification && !notification.read) {
+      if (notification && !notification.is_read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
       
@@ -123,7 +124,7 @@ export const useNotifications = () => {
     };
 
     setNotifications(prev => [newNotification, ...prev]);
-    if (!notification.read) {
+    if (!notification.is_read) {
       setUnreadCount(prev => prev + 1);
     }
   };
