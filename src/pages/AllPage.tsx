@@ -2,8 +2,6 @@ import { useState } from "react";
 import { TrendingUp, Flame, Clock, Star } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/post/PostCard";
-import { Header } from "@/components/layout/Header";
-import { Sidebar } from "@/components/layout/Sidebar";
 import { usePosts } from "@/hooks/usePosts";
 
 export const AllPage = () => {
@@ -42,13 +40,8 @@ export const AllPage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 ml-64">
-          <div className="container mx-auto px-4 py-8">
-            <div className="max-w-4xl mx-auto space-y-6">
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
@@ -101,9 +94,6 @@ export const AllPage = () => {
                   )}
                 </div>
               )}
-            </div>
-          </div>
-        </main>
       </div>
     </div>
   );

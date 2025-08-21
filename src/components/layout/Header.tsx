@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { SearchDialog } from "@/components/navigation/SearchDialog";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
@@ -29,13 +30,18 @@ export const Header = () => {
 
         {/* Search Bar */}
         <div className="flex-1 max-w-md mx-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search Reddit"
-              className="pl-10 bg-muted/50 border-reddit-border"
-            />
-          </div>
+          <SearchDialog 
+            trigger={
+              <div className="relative cursor-pointer">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search Reddit"
+                  className="pl-10 bg-muted/50 border-reddit-border cursor-pointer"
+                  readOnly
+                />
+              </div>
+            }
+          />
         </div>
 
         {/* Right side actions */}
@@ -43,9 +49,11 @@ export const Header = () => {
           {user ? (
             <>
               {/* Create Post */}
-              <Button variant="outline" size="sm" className="hidden md:flex">
-                <Plus className="h-4 w-4 mr-2" />
-                Create
+              <Button variant="outline" size="sm" className="hidden md:flex" asChild>
+                <Link to="/submit">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create
+                </Link>
               </Button>
 
               {/* Messages */}

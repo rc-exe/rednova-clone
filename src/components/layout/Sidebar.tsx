@@ -26,13 +26,17 @@ export const Sidebar = () => {
         <div className="space-y-4">
           {/* Main Navigation */}
           <div className="space-y-2">
-            <Button variant="ghost" className="w-full justify-start">
-              <Home className="mr-2 h-4 w-4" />
-              Home
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/">
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Link>
             </Button>
-            <Button variant="ghost" className="w-full justify-start">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Popular
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/explore">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Popular
+              </Link>
             </Button>
             <Button variant="ghost" className="w-full justify-start" asChild>
               <Link to="/all">
@@ -65,18 +69,21 @@ export const Sidebar = () => {
                   key={subreddit.name}
                   variant="ghost"
                   className="w-full justify-start h-auto p-2"
+                  asChild
                 >
-                  <div className="flex items-center space-x-3 w-full">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
-                      {subreddit.icon}
+                  <Link to={`/r/${subreddit.name.slice(2)}`}>
+                    <div className="flex items-center space-x-3 w-full">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
+                        {subreddit.icon}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">{subreddit.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {subreddit.members} members
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{subreddit.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {subreddit.members} members
-                      </p>
-                    </div>
-                  </div>
+                  </Link>
                 </Button>
               ))}
             </div>
@@ -95,18 +102,21 @@ export const Sidebar = () => {
                   key={subreddit.name}
                   variant="ghost"
                   className="w-full justify-start h-auto p-2"
+                  asChild
                 >
-                  <div className="flex items-center space-x-3 w-full">
-                    <div className="w-8 h-8 rounded-full bg-reddit-orange/10 flex items-center justify-center text-sm">
-                      {subreddit.icon}
+                  <Link to={`/r/${subreddit.name.slice(2)}`}>
+                    <div className="flex items-center space-x-3 w-full">
+                      <div className="w-8 h-8 rounded-full bg-reddit-orange/10 flex items-center justify-center text-sm">
+                        {subreddit.icon}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">{subreddit.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {subreddit.members} members
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{subreddit.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {subreddit.members} members
-                      </p>
-                    </div>
-                  </div>
+                  </Link>
                 </Button>
               ))}
             </div>
